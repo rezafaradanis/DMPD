@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Dashboard Monitoring Produksi — PT. Kino Indonesia Tbk</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+:root{
+  --navy:#003087;--blue:#0057b8;--green:#15803d;--red:#b91c1c;--amber:#b45309;
+  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;
+  --radius:10px;--admin:#7c3aed;
+  --col:#7c3aed;--kh:#15803d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── SETUP ── */
+.setup-wrap{min-height:100vh;background:var(--navy);display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-card{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:480px}
+.setup-card h1{font-size:20px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:4px}
+.setup-card .sub{color:var(--muted);font-size:12px;margin-bottom:20px;line-height:1.6;text-align:center}
+.step-box{background:#f8fafc;border:.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px}
+.step-num{background:var(--navy);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin-right:7px}
+.step-title{font-weight:700;color:var(--navy);display:flex;align-items:center;margin-bottom:8px;font-size:12px}
+.step-body{font-size:11px;color:var(--muted);line-height:1.8;margin-left:27px}
+.step-body a{color:var(--blue);font-weight:700;text-decoration:none}
+.step-body code{background:#e2e8f0;padding:1px 5px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:10px}
+.mg{margin-bottom:10px}
+.mg label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.mg input,.mg select{width:100%;border:.5px solid var(--border);border-radius:6px;padding:8px 11px;font-size:12px;font-family:inherit;color:var(--text);background:#fff}
+.mg input:focus,.mg select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,87,184,.1)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-full{width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;background:var(--navy);color:#fff;transition:.15s;margin-top:4px}
+.btn-full:hover{background:#001f5e}
+.setup-error{background:#fef2f2;color:#991b1b;border:.5px solid #fecaca;border-radius:6px;padding:9px;font-size:11px;margin-bottom:10px;display:none}
+.info-box{background:#eff6ff;border:.5px solid #bfdbfe;border-radius:7px;padding:10px 12px;font-size:11px;color:#1e40af;line-height:1.7;margin-top:10px}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;background:var(--navy);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:340px}
+.login-card h2{font-size:18px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:4px}
+.login-card .lsub{font-size:11px;color:var(--muted);text-align:center;margin-bottom:18px}
+.role-tabs{display:flex;gap:6px;margin-bottom:16px}
+.role-tab{flex:1;padding:8px;border-radius:7px;border:.5px solid var(--border);background:#f8fafc;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);transition:.15s;font-family:inherit}
+.role-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.role-tab.admin-tab.active{background:var(--admin);border-color:var(--admin)}
+.login-err{background:#fef2f2;color:#991b1b;border:.5px solid #fecaca;border-radius:6px;padding:8px;font-size:11px;margin-bottom:10px;display:none}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--navy);color:#fff;padding:0 14px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.tb-left h1{font-size:13px;font-weight:700}
+.tb-left p{font-size:10px;opacity:.6;margin-top:1px}
+.tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sync-row{display:flex;align-items:center;gap:5px;font-size:10px;opacity:.8}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.sync-dot.syncing{background:#f59e0b;animation:pulse .8s infinite}
+.sync-dot.err{background:#ef4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sm{padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;background:rgba(255,255,255,.15);color:#fff;transition:.15s;white-space:nowrap}
+.btn-sm:hover{background:rgba(255,255,255,.25)}
+.btn-sm.admin-btn{background:rgba(124,58,237,.4)}
+.btn-sm.admin-btn:hover{background:rgba(124,58,237,.6)}
+.btn-sm.master-btn{background:rgba(234,179,8,.3)}
+.btn-sm.master-btn:hover{background:rgba(234,179,8,.5)}
+.role-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.rb-admin{background:rgba(124,58,237,.3);color:#c4b5fd}
+.rb-viewer{background:rgba(34,197,94,.2);color:#86efac}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:#fff;border-bottom:.5px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:50px;z-index:90;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.filter-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.f-select{border:.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;font-family:inherit;color:var(--text);background:#f8fafc;cursor:pointer}
+.f-select:focus{outline:none;border-color:var(--blue)}
+.f-input-date{border:.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;font-family:inherit;color:var(--text);background:#f8fafc}
+.f-input-date:focus{outline:none;border-color:var(--blue)}
+.filter-sep{width:.5px;height:20px;background:var(--border);flex-shrink:0}
+.record-info{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
+.record-badge{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.no-data-bar{background:#fef9c3;border-bottom:.5px solid #fde68a;padding:8px 14px;text-align:center;font-size:12px;color:#854d0e;font-weight:600}
+
+/* ── BOARD HEADER ── */
+.board-header{background:var(--navy);color:#fff;margin:10px 12px 0;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.bh-title{font-size:14px;font-weight:700;letter-spacing:.5px}
+.bh-sub{font-size:10px;opacity:.65;margin-top:2px}
+.bh-meta{text-align:right;font-size:11px;opacity:.8;line-height:1.9}
+.bh-val{font-family:'IBM Plex Mono',monospace;font-weight:600}
+
+/* ── GRID ── */
+.board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px 12px 12px}
+@media(max-width:960px){.board-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.board-grid{grid-template-columns:1fr}}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-full{grid-column:1/-1}
+.card-title{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.bn{background:var(--navy);color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
+.chart-wrap{position:relative;width:100%;height:90px}
+
+/* ── VARIAN TABS ── */
+.varian-tabs{display:flex;gap:6px;margin-bottom:10px}
+.v-tab{padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;border:.5px solid var(--border);background:#f8fafc;color:var(--muted);cursor:pointer;transition:.15s}
+.v-tab.col-active{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd}
+.v-tab.kh-active{background:#dcfce7;color:#14532d;border-color:#86efac}
+
+/* ── ACHIEVEMENT TABLE ── */
+.ach-table{width:100%;border-collapse:collapse;font-size:12px}
+.ach-table th{padding:6px 10px;text-align:left;color:var(--muted);font-weight:600;border-bottom:.5px solid var(--border);font-size:10px;background:#f8fafc}
+.ach-table td{padding:7px 10px;border-bottom:.5px solid #f1f5f9;vertical-align:middle}
+.ach-table tr:last-child td{border-bottom:none}
+.ach-table tr:hover td{background:#fafbff}
+.ach-pct{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px}
+.prog-mini{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-top:3px;min-width:80px}
+.prog-mini-fill{height:100%;border-radius:3px;transition:.3s}
+.unit-badge{font-size:9px;color:var(--muted);background:#f1f5f9;padding:1px 6px;border-radius:8px}
+
+/* ── REJECT TABLE ── */
+.rej-table{width:100%;border-collapse:collapse;font-size:11px}
+.rej-table th{padding:5px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:.5px solid var(--border);font-size:10px;background:#f8fafc;white-space:nowrap}
+.rej-table td{padding:6px 8px;border-bottom:.5px solid #f1f5f9;vertical-align:middle}
+.rej-table tr:last-child td{border-bottom:none}
+.rej-table tr:hover td{background:#fafbff}
+.rej-num{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
+.rej-total{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:var(--red)}
+.area-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+.area-cooker{background:#dbeafe;color:#1e40af}
+.area-mixer{background:#ede9fe;color:#5b21b6}
+.area-encrusting{background:#fce7f3;color:#9d174d}
+.area-oven{background:#fef3c7;color:#92400e}
+.area-wrapping{background:#fee2e2;color:#991b1b}
+.area-packing{background:#dcfce7;color:#14532d}
+
+/* ── KPI ── */
+.kpi-big{font-size:26px;font-weight:700;color:var(--navy);font-family:'IBM Plex Mono',monospace;line-height:1}
+.kpi-label{font-size:9px;color:var(--muted);margin-top:2px}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;margin-top:5px}
+.pill-g{background:#dcfce7;color:#14532d}
+.pill-r{background:#fee2e2;color:#7f1d1d}
+.pill-y{background:#fef9c3;color:#713f12}
+.pill-b{background:#dbeafe;color:#1e3a8a}
+.prog-wrap{margin-top:6px}
+.prog-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px}
+.prog-bar{height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:.3s}
+
+/* ── BREAKDOWN 28 MESIN ── */
+.bd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.bd-cell{background:#f8fafc;border:.5px solid var(--border);border-radius:5px;padding:4px;text-align:center}
+.bd-cell-name{font-size:8px;color:var(--muted);font-weight:600}
+.bd-cell-val{font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--navy)}
+.bd-cell-unit{font-size:8px;color:var(--muted)}
+.bd-cell.has-down{background:#fff7f7;border-color:#fca5a5}
+.bd-cell.has-down .bd-cell-val{color:var(--red)}
+
+/* ── SAFETY ── */
+.safety-grid{display:grid;grid-template-columns:20px repeat(15,1fr);gap:2px;margin:4px 0}
+.sc{height:14px;border-radius:2px}
+.sc0{background:#f1f5f9;border:.5px solid #cbd5e1}.sc1{background:#16a34a}.sc2{background:#eab308}.sc3{background:#dc2626}.sc4{background:#3b82f6}
+.s-lbl{font-size:8px;color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:700}
+.s-hdr{font-size:8px;color:var(--muted);text-align:center;display:flex;align-items:flex-end;justify-content:center;padding-bottom:1px}
+
+/* ── INPUT FORM ── */
+.input-wrap{max-width:760px;margin:0 auto;padding:14px}
+.input-section{background:#fff;border:.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.input-section h3{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:.5px solid var(--border)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.form-group input,.form-group select,.form-group textarea{width:100%;border:.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;transition:.15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,87,184,.08)}
+.input-actions{display:flex;gap:8px;justify-content:flex-end;padding:0 14px 14px}
+.btn-save-input{padding:10px 24px;border-radius:8px;border:none;background:var(--admin);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-cancel-input{padding:10px 18px;border-radius:8px;border:.5px solid var(--border);background:#f8fafc;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* ── ACHIEVEMENT INPUT ── */
+.ach-input-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ach-varian-block{border:.5px solid var(--border);border-radius:8px;padding:12px}
+.ach-varian-title{font-size:11px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.col-block{border-color:#c4b5fd;background:#faf5ff}
+.col-title{color:#5b21b6}
+.kh-block{border-color:#86efac;background:#f0fdf4}
+.kh-title{color:#14532d}
+.ach-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+.ach-row:last-child{margin-bottom:0}
+.ach-div-name{min-width:80px;font-weight:600;font-size:11px}
+.ach-inp{border:.5px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;font-family:'IBM Plex Mono',monospace;width:72px;text-align:center}
+.ach-inp:focus{outline:none;border-color:var(--blue)}
+.ach-inp.actual{background:#f0fdf4;border-color:#86efac}
+.ach-unit{font-size:10px;color:var(--muted);min-width:38px}
+.ach-sep{font-size:10px;color:var(--muted)}
+
+/* ── REJECT INPUT ── */
+.rej-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rej-area-block{border:.5px solid var(--border);border-radius:8px;overflow:hidden}
+.rej-area-header{padding:8px 12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;border-bottom:.5px solid var(--border)}
+.rej-area-body{padding:10px 12px}
+.rej-item-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:11px}
+.rej-item-row:last-child{margin-bottom:0}
+.rej-item-label{flex:1;color:var(--text)}
+.rej-item-unit{font-size:10px;color:var(--muted);min-width:28px;text-align:right}
+.rej-inp-pair{display:flex;gap:6px;align-items:center}
+.rej-inp{border:.5px solid var(--border);border-radius:5px;padding:4px 6px;font-size:11px;font-family:'IBM Plex Mono',monospace;width:64px;text-align:center}
+.rej-inp:focus{outline:none;border-color:var(--blue)}
+.rej-inp.col{border-color:#c4b5fd;background:#faf5ff}
+.rej-inp.kh{border-color:#86efac;background:#f0fdf4}
+.rej-inp-label{font-size:9px;color:var(--muted);text-align:center;display:block}
+
+/* ── BD INPUT ── */
+.bd-input-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.bd-input-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+.bd-input-item label{font-size:9px;color:var(--muted);font-weight:700}
+.bd-input-item input{width:100%;text-align:center;border:.5px solid var(--border);border-radius:5px;padding:5px 4px;font-size:11px;font-family:'IBM Plex Mono',monospace}
+.bd-input-item input:focus{outline:none;border-color:var(--blue)}
+
+/* ── MASTER DATA ── */
+.master-wrap{max-width:960px;margin:0 auto;padding:16px}
+.master-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.master-table-wrap{background:#fff;border:.5px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.master-table{width:100%;border-collapse:collapse;font-size:12px}
+.master-table th{padding:9px 12px;text-align:left;color:var(--muted);font-weight:600;border-bottom:.5px solid var(--border);font-size:11px;background:#f8fafc;white-space:nowrap}
+.master-table td{padding:9px 12px;border-bottom:.5px solid #f1f5f9;vertical-align:middle}
+.master-table tr:last-child td{border-bottom:none}
+.master-table tr:hover td{background:#f8fafc}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:11px}
+.action-btn{padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit}
+.btn-edit{background:#dbeafe;color:#1e40af}
+.btn-edit:hover{background:#bfdbfe}
+.btn-delete{background:#fee2e2;color:#991b1b}
+.btn-delete:hover{background:#fecaca}
+.empty-master{text-align:center;padding:40px;color:var(--muted)}
+.record-count{font-size:12px;color:var(--muted);background:#f1f5f9;padding:3px 10px;border-radius:20px}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:9px;border-bottom:.5px solid var(--border)}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:.5px solid var(--border)}
+.btn-cancel{padding:7px 14px;border-radius:6px;border:.5px solid var(--border);background:#f8fafc;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-ok{padding:7px 14px;border-radius:6px;border:none;background:var(--navy);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-danger{padding:7px 14px;border-radius:6px;border:none;background:var(--red);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.confirm-box{background:#fef2f2;border:.5px solid #fecaca;border-radius:8px;padding:12px;font-size:12px;color:#991b1b;line-height:1.6;margin-bottom:4px}
+
+/* ── MISC ── */
+.legend-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.li{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--muted)}
+.lsq{width:8px;height:8px;border-radius:1px;flex-shrink:0}
+.board-footer{text-align:center;padding:10px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px}
+.sp{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notif{position:fixed;bottom:16px;right:16px;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;z-index:999;transform:translateY(60px);opacity:0;transition:.3s;pointer-events:none;max-width:300px}
+.notif.show{transform:translateY(0);opacity:1}
+.notif.ok{background:#15803d;color:#fff}
+.notif.err{background:#b91c1c;color:#fff}
+.notif.info{background:var(--navy);color:#fff}
+.shift-ari{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.shift-hilman{background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.shift-reza{background:#dcfce7;color:#14532d;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.divider-col{width:1px;background:var(--border);margin:0 4px}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SETUP ══════════ -->
+<div id="screenSetup" class="setup-wrap">
+<div class="setup-card">
+  <div style="font-size:36px;text-align:center;margin-bottom:10px">📊</div>
+  <h1>Dashboard Monitoring Produksi</h1>
+  <p class="sub">PT. Kino Indonesia Tbk — Setup sekali, akses dari mana saja.</p>
+  <div class="step-box">
+    <div class="step-title"><span class="step-num">1</span> Daftar JSONBin (database cloud gratis)</div>
+    <div class="step-body">Buka <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → Sign Up → Login → klik nama akun → <strong>API Keys</strong> → copy API Key (mulai <code>$2b$</code>)</div>
+  </div>
+  <div class="step-box">
+    <div class="step-title"><span class="step-num">2</span> Isi Konfigurasi</div>
+    <div style="margin-top:8px">
+      <div class="mg"><label>API Key JSONBin</label><input type="text" id="s_apikey" placeholder="$2b$10$..." style="font-family:'IBM Plex Mono',monospace;font-size:11px"></div>
+      <div class="mg"><label>Nama Plant / Lokasi</label><input type="text" id="s_company" placeholder="Plant Cikupa" value="Plant Cikupa"></div>
+      <div class="f2">
+        <div class="mg"><label>Password Admin</label><input type="password" id="s_adminpwd" placeholder="Min. 6 karakter"></div>
+        <div class="mg"><label>Password Viewer</label><input type="password" id="s_viewpwd" placeholder="Untuk operator/manager"></div>
+      </div>
+      <div id="setupErr" class="setup-error"></div>
+      <button class="btn-full" id="setupBtn" onclick="doSetup()">Setup & Buka Dashboard →</button>
+    </div>
+  </div>
+  <div class="info-box"><strong>Admin</strong> — input, edit, hapus data &nbsp;|&nbsp; <strong>Viewer</strong> — hanya lihat dashboard & filter</div>
+</div>
+</div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="screenLogin" style="display:none" class="login-wrap">
+<div class="login-card">
+  <div style="font-size:32px;text-align:center;margin-bottom:10px">📊</div>
+  <h2>Dashboard Monitoring Produksi</h2>
+  <p class="lsub" id="loginPlant">PT. Kino Indonesia Tbk</p>
+  <div class="role-tabs">
+    <button class="role-tab active" id="tabViewer" onclick="switchRole('viewer')">👁 Viewer</button>
+    <button class="role-tab admin-tab" id="tabAdmin" onclick="switchRole('admin')">🔐 Admin</button>
+  </div>
+  <div class="mg" style="text-align:left">
+    <label id="loginRoleLabel">Password Viewer</label>
+    <input type="password" id="loginPwd" placeholder="Masukkan password..." onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <div id="loginErr" class="login-err"></div>
+  <button class="btn-full" id="loginBtn" onclick="doLogin()">Masuk →</button>
+</div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="screenApp" style="display:none">
+<div class="topbar">
+  <div class="tb-left">
+    <h1>📊 Dashboard Monitoring Produksi</h1>
+    <p id="tbPlant">PT. Kino Indonesia Tbk</p>
+  </div>
+  <div class="tb-right">
+    <div class="sync-row">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncTxt" style="font-size:10px;opacity:.75">Tersimpan</span>
+    </div>
+    <span class="role-badge" id="roleBadge"></span>
+    <button class="btn-sm master-btn" id="btnMaster" onclick="showMaster()" style="display:none">🗂 Master Data</button>
+    <button class="btn-sm admin-btn" id="btnInputData" onclick="showInputForm(null,'dashboard')" style="display:none">✏️ Input Data</button>
+    <button class="btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn-sm" id="btnSettings" onclick="openSettings()" style="display:none">⚙</button>
+    <button class="btn-sm" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <select class="f-select" id="filterType" onchange="onFilterChange()">
+    <option value="date">📅 Per Tanggal</option>
+    <option value="week">📆 Per Minggu</option>
+    <option value="month">🗓 Per Bulan</option>
+  </select>
+  <div id="filterDateWrap"><input type="date" class="f-input-date" id="filterDate" onchange="loadRecord()"></div>
+  <div id="filterWeekWrap" style="display:none"><input type="week" class="f-input-date" id="filterWeek" onchange="loadRecord()"></div>
+  <div id="filterMonthWrap" style="display:none"><input type="month" class="f-input-date" id="filterMonth" onchange="loadRecord()"></div>
+  <div class="filter-sep"></div>
+  <select class="f-select" id="filterShift" onchange="loadRecord()">
+    <option value="all">Semua Shift</option>
+    <option value="Ari">Shift Ari</option>
+    <option value="Hilman">Shift Hilman</option>
+    <option value="Reza">Shift Reza</option>
+  </select>
+  <div class="record-info" id="recordInfo"><span class="record-badge">Memuat...</span></div>
+</div>
+<div id="noDataBar" class="no-data-bar" style="display:none">
+  ⚠️ Belum ada data untuk periode ini. <span id="noDataHint" style="display:none">Klik <strong>✏️ Input Data</strong> untuk menambahkan.</span>
+</div>
+
+<!-- BOARD HEADER -->
+<div class="board-header">
+  <div>
+    <div class="bh-title">DASHBOARD MONITORING PRODUKSI</div>
+    <div class="bh-sub">PT. Kino Indonesia Tbk &nbsp;·&nbsp; Shift: <span class="bh-val" id="viewShift">—</span></div>
+  </div>
+  <div class="bh-meta">
+    <div>Tanggal: <span class="bh-val" id="viewDate">—</span></div>
+  </div>
+</div>
+
+<!-- DASHBOARD GRID -->
+<div class="board-grid">
+
+  <!-- 1. ACHIEVEMENT -->
+  <div class="card card-full">
+    <div class="card-title"><span class="bn">1</span> ACHIEVEMENT — Target vs Aktual</div>
+    <div class="varian-tabs">
+      <span class="v-tab col-active" id="achTabCol" onclick="setAchVarian('Cokelat')">🍫 Cokelat</span>
+      <span class="v-tab" id="achTabKH" onclick="setAchVarian('Kacang Hijau')">🟢 Kacang Hijau</span>
+    </div>
+    <table class="ach-table">
+      <thead><tr><th>Divisi</th><th>Target</th><th>Aktual</th><th>Achievement</th><th style="min-width:100px">Progress</th><th>Satuan</th><th>Status</th></tr></thead>
+      <tbody id="achBody"></tbody>
+    </table>
+  </div>
+
+  <!-- 2. OEE -->
+  <div class="card">
+    <div class="card-title"><span class="bn">2</span> OEE TREND</div>
+    <div style="display:flex;gap:10px">
+      <div style="min-width:105px">
+        <div class="kpi-big" id="v_oee_a">—%</div>
+        <div class="kpi-label">OEE Actual</div>
+        <div id="v_oee_st" class="pill pill-b" style="margin-top:6px">—</div>
+        <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:2.2">
+          Avail: <strong id="v_oee_av">—</strong>%<br>
+          Perf: <strong id="v_oee_pf">—</strong>%<br>
+          Qual: <strong id="v_oee_ql">—</strong>%
+        </div>
+      </div>
+      <div style="flex:1">
+        <div class="chart-wrap"><canvas id="oeeC" role="img" aria-label="OEE chart">OEE chart</canvas></div>
+        <div class="prog-wrap">
+          <div class="prog-label"><span>vs Target <span id="v_oee_t">—</span>%</span><span id="v_oee_prog">—</span></div>
+          <div class="prog-bar"><div class="prog-fill" id="v_oee_fill" style="background:var(--blue)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. BREAKDOWN 28 MESIN -->
+  <div class="card card-full">
+    <div class="card-title"><span class="bn">3</span> BREAKDOWN — DOWNTIME MESIN WRAPPING (menit)</div>
+    <div class="bd-grid" id="v_bdGrid"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-top:.5px solid var(--border);padding-top:8px;margin-top:4px">
+      <div class="legend-row">
+        <span class="li"><span class="lsq" style="background:#f1f5f9;border:.5px solid #cbd5e1"></span>Normal</span>
+        <span class="li"><span class="lsq" style="background:#fca5a5"></span>Ada Downtime</span>
+      </div>
+      <div style="font-size:12px;font-weight:700">Total: <span id="v_bd_tot" style="font-family:'IBM Plex Mono',monospace;color:var(--red)">— min</span></div>
+    </div>
+  </div>
+
+  <!-- 4. MONITORING REJECT -->
+  <div class="card card-full">
+    <div class="card-title"><span class="bn">4</span> MONITORING REJECT — Per Area & Varian</div>
+    <div class="varian-tabs" style="margin-bottom:10px">
+      <span class="v-tab col-active" id="rejTabCol" onclick="setRejVarian('Cokelat')">🍫 Cokelat</span>
+      <span class="v-tab" id="rejTabKH" onclick="setRejVarian('Kacang Hijau')">🟢 Kacang Hijau</span>
+    </div>
+    <table class="rej-table">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Item Reject</th>
+          <th style="text-align:right">Qty Reject</th>
+          <th>Satuan</th>
+        </tr>
+      </thead>
+      <tbody id="rejBody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" style="font-weight:700;padding:8px;border-top:.5px solid var(--border)">Total Reject</td>
+          <td style="text-align:right;border-top:.5px solid var(--border);padding:8px"><span id="rejTotal" class="rej-total">—</span></td>
+          <td style="border-top:.5px solid var(--border);padding:8px;font-size:10px;color:var(--muted)">kg/pcs</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- 5. SAFETY -->
+  <div class="card">
+    <div class="card-title"><span class="bn">5</span> SAFETY CROSS</div>
+    <div class="safety-grid" id="v_safetyGrid"></div>
+    <div class="legend-row" style="margin-top:5px">
+      <span class="li"><span class="lsq" style="background:#16a34a;border-radius:2px"></span>No Incident</span>
+      <span class="li"><span class="lsq" style="background:#eab308;border-radius:2px"></span>Near Miss</span>
+      <span class="li"><span class="lsq" style="background:#dc2626;border-radius:2px"></span>Incident</span>
+      <span class="li"><span class="lsq" style="background:#3b82f6;border-radius:2px"></span>Safety Obs.</span>
+    </div>
+    <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:11px;border-top:.5px solid var(--border);padding-top:5px">
+      <span style="color:var(--muted)">Total Incidents</span>
+      <span id="v_inc" style="font-weight:700;color:var(--red);font-family:'IBM Plex Mono'">—</span>
+    </div>
+  </div>
+
+</div>
+<div class="board-footer">PT. KINO INDONESIA TBK &nbsp;·&nbsp; SAFETY FIRST – PEOPLE FIRST – QUALITY ALWAYS</div>
+</div>
+
+<!-- ══════════ MASTER DATA ══════════ -->
+<div id="screenMaster" style="display:none">
+<div class="topbar">
+  <div class="tb-left"><h1>🗂 Master Data Produksi</h1><p>Kelola semua record yang sudah diinput</p></div>
+  <div class="tb-right"><button class="btn-sm" onclick="showDashboard()">← Kembali ke Dashboard</button></div>
+</div>
+<div class="master-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:var(--navy)">Semua Record Data</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">Klik Edit untuk perbaiki data yang salah input.</div>
+    </div>
+    <span class="record-count" id="masterCount">0 record</span>
+  </div>
+  <div class="master-filters">
+    <span class="filter-label">Filter:</span>
+    <input type="month" class="f-input-date" id="masterFilterMonth" onchange="renderMaster()">
+    <select class="f-select" id="masterFilterShift" onchange="renderMaster()">
+      <option value="all">Semua Shift</option>
+      <option value="Ari">Shift Ari</option>
+      <option value="Hilman">Shift Hilman</option>
+      <option value="Reza">Shift Reza</option>
+    </select>
+    <button class="btn-sm" onclick="document.getElementById('masterFilterMonth').value='';document.getElementById('masterFilterShift').value='all';renderMaster()" style="background:#f1f5f9;color:var(--text)">✕ Reset</button>
+  </div>
+  <div class="master-table-wrap">
+    <div style="overflow-x:auto">
+      <table class="master-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Tanggal</th><th>Shift</th>
+            <th>OEE%</th><th>BD Total</th>
+            <th>Rej.Col (kg)</th><th>Rej.KH (kg)</th>
+            <th>Diinput</th><th style="text-align:center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="masterTbody"></tbody>
+      </table>
+    </div>
+    <div id="masterEmpty" class="empty-master" style="display:none">
+      <div style="font-size:36px;margin-bottom:8px">📭</div>
+      <div>Belum ada data yang diinput</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ INPUT FORM ══════════ -->
+<div id="screenInput" style="display:none">
+<div class="topbar">
+  <div class="tb-left"><h1>✏️ Input Data Produksi</h1><p id="inputSub">Data baru</p></div>
+  <div class="tb-right"><button class="btn-sm" onclick="cancelInput()">← Batal</button></div>
+</div>
+<div class="input-wrap">
+
+  <!-- META — hanya tanggal & shift -->
+  <div class="input-section">
+    <h3>📋 Informasi Laporan</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Tanggal</label><input type="date" id="i_date"></div>
+      <div class="form-group"><label>Shift</label>
+        <select id="i_shift">
+          <option value="Ari">Shift Ari</option>
+          <option value="Hilman">Shift Hilman</option>
+          <option value="Reza">Shift Reza</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENT INPUT — 2 kolom per varian -->
+  <div class="input-section">
+    <h3><span class="bn">1</span> Achievement — Target & Aktual per Varian</h3>
+    <div style="display:flex;gap:6px;margin-bottom:12px;font-size:11px;color:var(--muted);align-items:center">
+      <span style="background:#faf5ff;border:.5px solid #c4b5fd;border-radius:5px;padding:3px 10px;color:#5b21b6;font-weight:700">Kolom putih = Target</span>
+      <span style="background:#f0fdf4;border:.5px solid #86efac;border-radius:5px;padding:3px 10px;color:#14532d;font-weight:700">Kolom hijau = Aktual</span>
+    </div>
+    <div class="ach-input-wrap">
+      <!-- COKELAT -->
+      <div class="ach-varian-block col-block">
+        <div class="ach-varian-title col-title">🍫 Cokelat</div>
+        <div style="display:grid;grid-template-columns:80px 1fr 1fr 50px;gap:6px;align-items:center;margin-bottom:6px;font-size:10px;color:var(--muted);font-weight:600">
+          <span>Divisi</span><span style="text-align:center">Target</span><span style="text-align:center;background:#f0fdf4;border-radius:4px;padding:2px">Aktual</span><span>Satuan</span>
+        </div>
+        <div id="achInputCol"></div>
+      </div>
+      <!-- KACANG HIJAU -->
+      <div class="ach-varian-block kh-block">
+        <div class="ach-varian-title kh-title">🟢 Kacang Hijau</div>
+        <div style="display:grid;grid-template-columns:80px 1fr 1fr 50px;gap:6px;align-items:center;margin-bottom:6px;font-size:10px;color:var(--muted);font-weight:600">
+          <span>Divisi</span><span style="text-align:center">Target</span><span style="text-align:center;background:#f0fdf4;border-radius:4px;padding:2px">Aktual</span><span>Satuan</span>
+        </div>
+        <div id="achInputKH"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OEE -->
+  <div class="input-section">
+    <h3><span class="bn">2</span> OEE</h3>
+    <div class="form-row">
+      <div class="form-group"><label>OEE Actual (%)</label><input type="number" id="i_oee_a" placeholder="82" min="0" max="100"></div>
+      <div class="form-group"><label>OEE Target (%)</label><input type="number" id="i_oee_t" placeholder="85" min="0" max="100"></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label>Availability (%)</label><input type="number" id="i_oee_av" placeholder="88"></div>
+      <div class="form-group"><label>Performance (%)</label><input type="number" id="i_oee_pf" placeholder="92"></div>
+      <div class="form-group"><label>Quality (%)</label><input type="number" id="i_oee_ql" placeholder="96"></div>
+    </div>
+  </div>
+
+  <!-- BREAKDOWN 28 MESIN -->
+  <div class="input-section">
+    <h3><span class="bn">3</span> Breakdown — Downtime Mesin Wrapping (menit)</h3>
+    <div class="bd-input-grid" id="bdInputGrid"></div>
+  </div>
+
+  <!-- REJECT INPUT -->
+  <div class="input-section">
+    <h3><span class="bn">4</span> Monitoring Reject — Per Area & Varian</h3>
+    <div style="display:flex;gap:6px;margin-bottom:12px;font-size:11px;color:var(--muted);align-items:center">
+      <span style="background:#faf5ff;border:.5px solid #c4b5fd;border-radius:5px;padding:3px 10px;color:#5b21b6;font-weight:700">🍫 = Cokelat</span>
+      <span style="background:#f0fdf4;border:.5px solid #86efac;border-radius:5px;padding:3px 10px;color:#14532d;font-weight:700">🟢 = Kacang Hijau</span>
+    </div>
+    <div class="rej-input-grid" id="rejInputGrid"></div>
+  </div>
+
+  <!-- SAFETY -->
+  <div class="input-section">
+    <h3><span class="bn">5</span> Safety Cross — Klik untuk ubah status</h3>
+    <div style="display:grid;grid-template-columns:28px repeat(15,1fr);gap:3px" id="safetyInputGrid"></div>
+    <div class="legend-row" style="margin-top:8px">
+      <span class="li"><span class="lsq" style="background:#f1f5f9;border:.5px solid #cbd5e1;border-radius:2px"></span>Kosong</span>
+      <span class="li"><span class="lsq" style="background:#16a34a;border-radius:2px"></span>No Incident</span>
+      <span class="li"><span class="lsq" style="background:#eab308;border-radius:2px"></span>Near Miss</span>
+      <span class="li"><span class="lsq" style="background:#dc2626;border-radius:2px"></span>Incident</span>
+      <span class="li"><span class="lsq" style="background:#3b82f6;border-radius:2px"></span>Safety Obs.</span>
+    </div>
+  </div>
+
+</div>
+<div class="input-actions">
+  <button class="btn-cancel-input" onclick="cancelInput()">Batal</button>
+  <button class="btn-save-input" id="btnSaveInput" onclick="saveRecord()">💾 Simpan Data</button>
+</div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settingsModal">
+<div class="modal">
+  <h3>⚙ Pengaturan</h3>
+  <div class="mg"><label>Nama Plant</label><input type="text" id="cfg_co" style="border:.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;width:100%"></div>
+  <div class="mg"><label>JSONBin API Key</label><input type="text" id="cfg_key" style="border:.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;font-family:'IBM Plex Mono',monospace;width:100%"></div>
+  <div class="mg"><label>Bin ID (jangan diubah)</label><input type="text" id="cfg_bin" readonly style="border:.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;font-family:'IBM Plex Mono',monospace;width:100%;background:#f1f5f9"></div>
+  <div class="mg"><label>Ganti Password Admin</label><input type="password" id="cfg_apwd" placeholder="Kosongkan jika tidak ganti" style="border:.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;width:100%"></div>
+  <div class="mg"><label>Ganti Password Viewer</label><input type="password" id="cfg_vpwd" placeholder="Kosongkan jika tidak ganti" style="border:.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;width:100%"></div>
+  <div class="modal-foot">
+    <button class="btn-cancel" onclick="closeMod('settingsModal')">Tutup</button>
+    <button class="btn-ok" onclick="saveSettings()">Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-bg" id="deleteModal">
+<div class="modal">
+  <h3>🗑 Hapus Record</h3>
+  <div class="confirm-box" id="deleteInfo"></div>
+  <div style="font-size:12px;color:var(--muted);margin-top:4px">Data yang dihapus tidak bisa dikembalikan.</div>
+  <div class="modal-foot">
+    <button class="btn-cancel" onclick="closeMod('deleteModal')">Batal</button>
+    <button class="btn-danger" onclick="confirmDelete()">Ya, Hapus</button>
+  </div>
+</div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════
+const JBIN = 'https://api.jsonbin.io/v3/b';
+
+const DIVISI = [
+  {name:'Cooker',    unit:'Batch',  key:'cooker'},
+  {name:'Mixer',     unit:'Batch',  key:'mixer'},
+  {name:'Encrusting',unit:'Batch',  key:'encrusting'},
+  {name:'Oven',      unit:'Batch',  key:'oven'},
+  {name:'Packing',   unit:'Carton', key:'packing'},
+];
+
+const MACHINES = Array.from({length:28},(_,i)=>'M'+(i+1));
+
+// Reject areas & items
+const REJECT_AREAS = [
+  {
+    key:'cooker', name:'Cooker', cls:'area-cooker',
+    items:[{key:'pasta', label:'Pasta', unit:'kg'}]
+  },
+  {
+    key:'mixer', name:'Mixer', cls:'area-mixer',
+    items:[{key:'pasta_pastry', label:'Pasta/Pastry', unit:'kg'}]
+  },
+  {
+    key:'encrusting', name:'Encrusting', cls:'area-encrusting',
+    items:[{key:'pasta_pastry', label:'Pasta & Pastry (gabung)', unit:'kg'}]
+  },
+  {
+    key:'oven', name:'Oven', cls:'area-oven',
+    items:[{key:'pia', label:'Pia', unit:'kg'}]
+  },
+  {
+    key:'wrapping', name:'Wrapping', cls:'area-wrapping',
+    items:[
+      {key:'inner', label:'Inner', unit:'kg'},
+      {key:'plastik_bulk', label:'Plastik Bulk', unit:'kg'},
+      {key:'pia', label:'Pia', unit:'kg'},
+    ]
+  },
+  {
+    key:'packing', name:'Packing', cls:'area-packing',
+    items:[
+      {key:'lakban', label:'Lakban', unit:'kg'},
+      {key:'mbox', label:'Mbox', unit:'pcs'},
+    ]
+  },
+];
+
+const SCREENS = ['screenSetup','screenLogin','screenApp','screenMaster','screenInput'];
+
+// ════════════════════════════════════
+// STATE
+// ════════════════════════════════════
+let CFG={}, DB={records:[]}, charts={};
+let currentRole=null, currentRecord=null;
+let inputSafety=[], inputAch={}, inputReject={};
+let loginRoleSelected='viewer';
+let achVarian='Cokelat';
+let rejVarian='Cokelat';
+let editingRecordId=null;
+let inputReturnTo='dashboard';
+let deleteTargetId=null;
+
+const TODAY=()=>new Date().toISOString().slice(0,10);
+const DAYS_AGO=n=>new Date(Date.now()-n*86400000).toISOString().slice(0,10);
+
+// ════════════════════════════════════
+// SETUP
+// ════════════════════════════════════
+window.onload=()=>{
+  CFG=JSON.parse(localStorage.getItem('pb_cfg')||'{}');
+  if(CFG.apiKey&&CFG.binId){
+    show('screenLogin');
+    document.getElementById('loginPlant').textContent=CFG.company||'PT. Kino Indonesia Tbk';
+  } else show('screenSetup');
+};
+
+async function doSetup(){
+  const key=g('s_apikey').trim(),co=g('s_company').trim(),ap=g('s_adminpwd').trim(),vp=g('s_viewpwd').trim();
+  const err=document.getElementById('setupErr');err.style.display='none';
+  if(!key||!co||!ap||!vp){err.textContent='Semua field wajib diisi!';err.style.display='block';return;}
+  if(ap.length<6||vp.length<6){err.textContent='Password minimal 6 karakter!';err.style.display='block';return;}
+  document.getElementById('setupBtn').innerHTML='<span class="sp"></span> Menyiapkan...';
+  try{
+    const res=await fetch(JBIN,{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'KinoProdBoard5'},body:JSON.stringify({records:[]})});
+    const j=await res.json();
+    if(!j.metadata?.id)throw new Error(j.message||'Gagal. Cek API Key.');
+    CFG={apiKey:key,binId:j.metadata.id,company:co,adminPwd:ap,viewPwd:vp};
+    localStorage.setItem('pb_cfg',JSON.stringify(CFG));
+    DB={records:[]};show('screenLogin');
+    document.getElementById('loginPlant').textContent=co;
+    notify('Setup berhasil! Silakan login.','ok');
+  }catch(e){
+    document.getElementById('setupErr').textContent='Error: '+e.message;
+    document.getElementById('setupErr').style.display='block';
+    document.getElementById('setupBtn').textContent='Setup & Buka Dashboard →';
+  }
+}
+
+// ════════════════════════════════════
+// LOGIN
+// ════════════════════════════════════
+function switchRole(role){
+  loginRoleSelected=role;
+  document.getElementById('tabViewer').classList.toggle('active',role==='viewer');
+  document.getElementById('tabAdmin').classList.toggle('active',role==='admin');
+  document.getElementById('loginRoleLabel').textContent=role==='admin'?'Password Admin':'Password Viewer';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginPwd').value='';
+  document.getElementById('loginPwd').focus();
+}
+
+async function doLogin(){
+  const pwd=g('loginPwd').trim();
+  const err=document.getElementById('loginErr');err.style.display='none';
+  if(!pwd){err.textContent='Masukkan password!';err.style.display='block';return;}
+  const isAdmin=pwd===CFG.adminPwd&&loginRoleSelected==='admin';
+  const isViewer=pwd===CFG.viewPwd&&loginRoleSelected==='viewer';
+  if(!isAdmin&&!isViewer){err.textContent='Password salah!';err.style.display='block';return;}
+  currentRole=isAdmin?'admin':'viewer';
+  document.getElementById('loginBtn').innerHTML='<span class="sp"></span>';
+  await loadDB();
+  initApp();
+}
+
+function doLogout(){
+  currentRole=null;currentRecord=null;
+  document.getElementById('loginPwd').value='';
+  document.getElementById('loginErr').style.display='none';
+  show('screenLogin');
+}
+
+// ════════════════════════════════════
+// CLOUD
+// ════════════════════════════════════
+function setSyncStatus(s){
+  const dot=document.getElementById('syncDot'),txt=document.getElementById('syncTxt');
+  if(s==='ok'){dot.className='sync-dot';txt.textContent='Tersimpan ☁️';}
+  else if(s==='s'){dot.className='sync-dot syncing';txt.textContent='Menyimpan...';}
+  else{dot.className='sync-dot err';txt.textContent='Gagal sync';}
+}
+async function loadDB(){
+  setSyncStatus('s');
+  try{
+    const r=await fetch(`${JBIN}/${CFG.binId}/latest`,{headers:{'X-Master-Key':CFG.apiKey}});
+    const j=await r.json();DB=j.record||{records:[]};
+    if(!DB.records)DB.records=[];setSyncStatus('ok');
+  }catch(e){DB={records:[]};setSyncStatus('err');notify('Offline','err');}
+}
+async function saveDB(){
+  setSyncStatus('s');
+  try{
+    const r=await fetch(`${JBIN}/${CFG.binId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':CFG.apiKey},body:JSON.stringify(DB)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    setSyncStatus('ok');return true;
+  }catch(e){setSyncStatus('err');notify('Gagal simpan: '+e.message,'err');return false;}
+}
+
+// ════════════════════════════════════
+// INIT APP
+// ════════════════════════════════════
+function initApp(){
+  show('screenApp');
+  const isAdmin=currentRole==='admin';
+  document.getElementById('tbPlant').textContent=CFG.company||'PT. Kino Indonesia Tbk';
+  document.getElementById('roleBadge').textContent=isAdmin?'🔐 Admin':'👁 Viewer';
+  document.getElementById('roleBadge').className=isAdmin?'role-badge rb-admin':'role-badge rb-viewer';
+  document.getElementById('btnInputData').style.display=isAdmin?'inline-flex':'none';
+  document.getElementById('btnMaster').style.display=isAdmin?'inline-flex':'none';
+  document.getElementById('btnSettings').style.display=isAdmin?'inline-flex':'none';
+  document.getElementById('noDataHint').style.display=isAdmin?'inline':'none';
+  document.getElementById('loginBtn').innerHTML='Masuk →';
+  document.getElementById('filterDate').value=TODAY();
+  document.getElementById('filterMonth').value=TODAY().slice(0,7);
+  initCharts();loadRecord();
+}
+
+// ════════════════════════════════════
+// FILTER & RECORD LOADING
+// ════════════════════════════════════
+function onFilterChange(){
+  const type=g('filterType');
+  document.getElementById('filterDateWrap').style.display=type==='date'?'block':'none';
+  document.getElementById('filterWeekWrap').style.display=type==='week'?'block':'none';
+  document.getElementById('filterMonthWrap').style.display=type==='month'?'block':'none';
+  loadRecord();
+}
+
+function getFiltered(){
+  const type=g('filterType'),shift=g('filterShift');
+  let recs=DB.records||[];
+  if(type==='date'){const d=g('filterDate');recs=recs.filter(r=>r.meta?.date===d);}
+  else if(type==='week'){
+    const wk=g('filterWeek');
+    if(wk){const[yr,wNum]=wk.split('-W').map(Number);
+      recs=recs.filter(r=>{const d=new Date(r.meta.date);const jan4=new Date(yr,0,4);
+        const wn=Math.ceil((((d-jan4)/86400000)+jan4.getDay()+1)/7);return d.getFullYear()===yr&&wn===wNum;});}
+  }else if(type==='month'){const m=g('filterMonth');recs=recs.filter(r=>r.meta?.date?.startsWith(m));}
+  if(shift!=='all')recs=recs.filter(r=>r.meta?.shift===shift);
+  return recs;
+}
+
+function loadRecord(){
+  const recs=getFiltered();
+  const info=document.getElementById('recordInfo');
+  const noData=document.getElementById('noDataBar');
+  if(!recs.length){
+    noData.style.display='block';
+    info.innerHTML='<span class="record-badge" style="background:#fee2e2;color:#991b1b">Tidak ada data</span>';
+    renderEmpty();return;
+  }
+  noData.style.display='none';
+  const rec=recs.length===1?recs[0]:aggregateRecords(recs);
+  info.innerHTML=`<span class="record-badge">${recs.length} record${recs.length>1?' (dirata-rata)':''}</span>`;
+  currentRecord=rec;renderDashboard(rec);
+}
+
+function aggregateRecords(recs){
+  const avg=arr=>arr.reduce((a,b)=>a+b,0)/arr.length;
+  const last=recs[recs.length-1];
+  const ach={};
+  DIVISI.forEach(d=>['Cokelat','Kacang Hijau'].forEach(v=>{
+    const key=`${d.key}_${v}`;
+    const vals=recs.map(r=>r.ach?.[key]||{a:0,t:0});
+    ach[key]={a:Math.round(avg(vals.map(x=>x.a))),t:vals[0].t||0};
+  }));
+  const reject={};
+  REJECT_AREAS.forEach(area=>area.items.forEach(item=>['Cokelat','Kacang Hijau'].forEach(v=>{
+    const key=`${area.key}_${item.key}_${v}`;
+    const vals=recs.map(r=>r.reject?.[key]||0);
+    reject[key]=+avg(vals).toFixed(2);
+  })));
+  return{
+    meta:{...last.meta,shift:recs.map(r=>'Shift '+r.meta.shift).join(' / ')},
+    ach,reject,
+    oee:{a:+avg(recs.map(r=>r.oee?.a||0)).toFixed(1),t:recs[0].oee?.t||85,
+         av:+avg(recs.map(r=>r.oee?.av||0)).toFixed(1),pf:+avg(recs.map(r=>r.oee?.pf||0)).toFixed(1),ql:+avg(recs.map(r=>r.oee?.ql||0)).toFixed(1)},
+    bd:{m:MACHINES.map((_,i)=>Math.round(avg(recs.map(r=>r.bd?.m?.[i]||0))))},
+    safety:last.safety,
+  };
+}
+
+// ════════════════════════════════════
+// ACHIEVEMENT VIEW
+// ════════════════════════════════════
+function setAchVarian(v){
+  achVarian=v;
+  document.getElementById('achTabCol').className='v-tab'+(v==='Cokelat'?' col-active':'');
+  document.getElementById('achTabKH').className='v-tab'+(v==='Kacang Hijau'?' kh-active':'');
+  if(currentRecord)renderAchievement(currentRecord.ach||{});
+}
+
+function renderAchievement(ach){
+  document.getElementById('achBody').innerHTML=DIVISI.map(d=>{
+    const key=`${d.key}_${achVarian}`;
+    const data=ach[key]||{a:0,t:0};
+    const pct=data.t>0?Math.round(data.a/data.t*100):0;
+    const clr=pct>=100?'#15803d':pct>=90?'#d97706':'#b91c1c';
+    const fill=pct>=100?'#22c55e':pct>=90?'#f59e0b':'#ef4444';
+    const stCls=pct>=100?'pill-g':pct>=90?'pill-y':'pill-r';
+    const stLbl=pct>=100?'On Target':pct>=90?'Caution':'Below';
+    return`<tr>
+      <td style="font-weight:600">${d.name}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">${data.t.toLocaleString()}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">${data.a.toLocaleString()}</td>
+      <td class="ach-pct" style="color:${clr}">${pct}%</td>
+      <td><div class="prog-mini"><div class="prog-mini-fill" style="width:${Math.min(pct,100)}%;background:${fill}"></div></div></td>
+      <td><span class="unit-badge">${d.unit}</span></td>
+      <td><span class="pill ${stCls}">${stLbl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════
+// REJECT VIEW
+// ════════════════════════════════════
+function setRejVarian(v){
+  rejVarian=v;
+  document.getElementById('rejTabCol').className='v-tab'+(v==='Cokelat'?' col-active':'');
+  document.getElementById('rejTabKH').className='v-tab'+(v==='Kacang Hijau'?' kh-active':'');
+  if(currentRecord)renderReject(currentRecord.reject||{});
+}
+
+function renderReject(reject){
+  let totalKg=0,totalPcs=0;
+  const rows=[];
+  REJECT_AREAS.forEach(area=>{
+    area.items.forEach((item,idx)=>{
+      const key=`${area.key}_${item.key}_${rejVarian}`;
+      const val=reject[key]||0;
+      if(item.unit==='kg')totalKg+=val;
+      else totalPcs+=val;
+      rows.push(`<tr>
+        ${idx===0?`<td rowspan="${area.items.length}" style="vertical-align:middle"><span class="area-badge ${area.cls}">${area.name}</span></td>`:''}
+        <td style="font-size:11px">${item.label}</td>
+        <td style="text-align:right" class="rej-num">${val.toLocaleString()}</td>
+        <td style="font-size:10px;color:var(--muted)">${item.unit}</td>
+      </tr>`);
+    });
+  });
+  document.getElementById('rejBody').innerHTML=rows.join('');
+  const totTxt=(totalKg>0?totalKg.toFixed(2)+' kg':'')+(totalKg>0&&totalPcs>0?' + ':'')+(totalPcs>0?totalPcs+' pcs':'');
+  document.getElementById('rejTotal').textContent=totTxt||'0';
+}
+
+// ════════════════════════════════════
+// RENDER DASHBOARD
+// ════════════════════════════════════
+function renderEmpty(){
+  document.getElementById('achBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">Belum ada data</td></tr>';
+  document.getElementById('rejBody').innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">Belum ada data</td></tr>';
+  document.getElementById('rejTotal').textContent='—';
+  ['v_oee_a','v_oee_av','v_oee_pf','v_oee_ql','v_oee_t','v_oee_prog',
+   'v_inc','viewDate','viewShift','v_bd_tot'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
+  document.getElementById('v_oee_fill').style.width='0%';
+  document.getElementById('v_bdGrid').innerHTML='';
+  document.getElementById('v_safetyGrid').innerHTML='';
+}
+
+function renderDashboard(r){
+  document.getElementById('viewDate').textContent=r.meta?.date||'—';
+  document.getElementById('viewShift').textContent=r.meta?.shift||'—';
+
+  // Achievement
+  renderAchievement(r.ach||{});
+
+  // Reject
+  renderReject(r.reject||{});
+
+  // OEE
+  const oeeA=r.oee?.a||0,oeeT=r.oee?.t||85;
+  document.getElementById('v_oee_a').textContent=oeeA+'%';
+  document.getElementById('v_oee_av').textContent=r.oee?.av||0;
+  document.getElementById('v_oee_pf').textContent=r.oee?.pf||0;
+  document.getElementById('v_oee_ql').textContent=r.oee?.ql||0;
+  document.getElementById('v_oee_t').textContent=oeeT;
+  document.getElementById('v_oee_prog').textContent=oeeA+'%';
+  document.getElementById('v_oee_fill').style.width=Math.min(oeeA,100)+'%';
+  document.getElementById('v_oee_fill').style.background=oeeA>=oeeT?'#15803d':oeeA>=oeeT*0.9?'#d97706':'#dc2626';
+  setPill('v_oee_st',oeeA>=oeeT?'g':oeeA>=oeeT*0.9?'y':'r',oeeA>=oeeT?'On Target':oeeA>=oeeT*0.9?'Caution':'Below Target');
+
+  // Breakdown 28 mesin
+  const bdVals=r.bd?.m||Array(28).fill(0);
+  document.getElementById('v_bd_tot').textContent=bdVals.reduce((a,b)=>a+b,0)+' min';
+  document.getElementById('v_bdGrid').innerHTML=MACHINES.map((m,i)=>{
+    const val=bdVals[i]||0;
+    return`<div class="bd-cell ${val>0?'has-down':''}">
+      <div class="bd-cell-name">${m}</div>
+      <div class="bd-cell-val">${val}</div>
+      <div class="bd-cell-unit">min</div>
+    </div>`;
+  }).join('');
+
+  // Safety
+  renderSafetyView(r.safety);
+}
+
+function renderSafetyView(safety){
+  const grid=document.getElementById('v_safetyGrid');grid.innerHTML='';
+  const data=safety&&safety.length===5?safety:Array.from({length:5},()=>Array(15).fill(1));
+  grid.appendChild(document.createElement('div'));
+  for(let d=1;d<=15;d++){const h=document.createElement('div');h.className='s-hdr';h.textContent=d;grid.appendChild(h);}
+  for(let w=0;w<5;w++){
+    const wl=document.createElement('div');wl.className='s-lbl';wl.textContent='W'+(w+1);grid.appendChild(wl);
+    for(let d=0;d<15;d++){const c=document.createElement('div');c.className='sc sc'+(data[w]?.[d]??0);grid.appendChild(c);}
+  }
+  let inc=0;(data||[]).forEach(r=>r.forEach(x=>{if(x===3)inc++;}));
+  document.getElementById('v_inc').textContent=inc;
+}
+
+// ════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════
+const CL=['Sen','Sel','Rab','Kam','Jum','Sab','Min','Tgl'];
+function mk(id,type,data,opts={}){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  if(charts[id])charts[id].destroy();
+  charts[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:0},...opts}});
+}
+function initCharts(){
+  mk('oeeC','line',{labels:CL,datasets:[
+    {data:[78,80,81,79,83,82,84,82],borderColor:'#0057b8',backgroundColor:'#0057b822',fill:true,tension:.3,pointRadius:2,borderWidth:1.5},
+    {data:Array(8).fill(85),borderColor:'#b91c1c',borderWidth:1,borderDash:[4,2],pointRadius:0,fill:false}
+  ]},{scales:{x:{ticks:{font:{size:8}}},y:{ticks:{font:{size:8}},min:60,max:100}}});
+}
+
+// ════════════════════════════════════
+// INPUT FORM
+// ════════════════════════════════════
+function showInputForm(rec=null, returnTo='dashboard'){
+  editingRecordId=rec?.id||null;
+  inputReturnTo=returnTo;
+
+  document.getElementById('i_date').value=rec?.meta?.date||TODAY();
+  document.getElementById('i_shift').value=rec?.meta?.shift||'Ari';
+  document.getElementById('i_oee_a').value=rec?.oee?.a||'';
+  document.getElementById('i_oee_t').value=rec?.oee?.t||85;
+  document.getElementById('i_oee_av').value=rec?.oee?.av||'';
+  document.getElementById('i_oee_pf').value=rec?.oee?.pf||'';
+  document.getElementById('i_oee_ql').value=rec?.oee?.ql||'';
+
+  // Achievement
+  inputAch=rec?.ach?JSON.parse(JSON.stringify(rec.ach)):{};
+  buildAchInput();
+
+  // Reject
+  inputReject=rec?.reject?JSON.parse(JSON.stringify(rec.reject)):{};
+  buildRejInput();
+
+  // BD
+  document.getElementById('bdInputGrid').innerHTML=MACHINES.map((m,i)=>`
+    <div class="bd-input-item">
+      <label>${m}</label>
+      <input type="number" id="i_bd${i}" value="${rec?.bd?.m?.[i]||''}" placeholder="0" min="0">
+    </div>`).join('');
+
+  // Safety
+  inputSafety=rec?.safety?JSON.parse(JSON.stringify(rec.safety)):Array.from({length:5},()=>Array(15).fill(0));
+  renderSafetyInput();
+
+  document.getElementById('inputSub').textContent=rec?`Mengedit: ${rec.meta?.date} — Shift ${rec.meta?.shift}`:'Data baru';
+  show('screenInput');
+}
+
+function buildAchInput(){
+  ['Col','KH'].forEach(tag=>{
+    const varian=tag==='Col'?'Cokelat':'Kacang Hijau';
+    const wrap=document.getElementById('achInput'+tag);
+    wrap.innerHTML=DIVISI.map(d=>{
+      const key=`${d.key}_${varian}`;
+      const cur=inputAch[key]||{a:0,t:0};
+      return`<div style="display:grid;grid-template-columns:80px 1fr 1fr 50px;gap:6px;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:600">${d.name}</span>
+        <input type="number" placeholder="0" value="${cur.t||''}"
+          oninput="inputAch['${key}']=inputAch['${key}']||{};inputAch['${key}'].t=+this.value"
+          class="ach-inp" style="border:.5px solid var(--border)">
+        <input type="number" placeholder="0" value="${cur.a||''}"
+          oninput="inputAch['${key}']=inputAch['${key}']||{};inputAch['${key}'].a=+this.value"
+          class="ach-inp actual">
+        <span style="font-size:10px;color:var(--muted)">${d.unit}</span>
+      </div>`;
+    }).join('');
+  });
+}
+
+function buildRejInput(){
+  const wrap=document.getElementById('rejInputGrid');
+  wrap.innerHTML=REJECT_AREAS.map(area=>{
+    const hdrClsMap={cooker:'#1e40af|#eff6ff',mixer:'#5b21b6|#faf5ff',encrusting:'#9d174d|#fdf2f8',oven:'#92400e|#fffbeb',wrapping:'#991b1b|#fff7f7',packing:'#14532d|#f0fdf4'};
+    const[txtClr,bgClr]=(hdrClsMap[area.key]||'#1e293b|#f8fafc').split('|');
+    return`<div class="rej-area-block">
+      <div class="rej-area-header" style="background:${bgClr};color:${txtClr}">
+        <span class="area-badge ${area.cls}">${area.name}</span>
+      </div>
+      <div class="rej-area-body">
+        <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:6px;margin-bottom:6px;font-size:9px;color:var(--muted);font-weight:700">
+          <span>Item</span>
+          <span style="text-align:center;background:#faf5ff;border-radius:4px;padding:2px">🍫 Cokelat</span>
+          <span style="text-align:center;background:#f0fdf4;border-radius:4px;padding:2px">🟢 Kacang Hijau</span>
+        </div>
+        ${area.items.map(item=>{
+          const keyCol=`${area.key}_${item.key}_Cokelat`;
+          const keyKH=`${area.key}_${item.key}_Kacang Hijau`;
+          return`<div style="display:grid;grid-template-columns:1fr 80px 80px;gap:6px;align-items:center;margin-bottom:6px">
+            <span style="font-size:11px">${item.label} <span style="font-size:9px;color:var(--muted)">(${item.unit})</span></span>
+            <input type="number" placeholder="0" step="0.01" value="${inputReject[keyCol]||''}"
+              oninput="inputReject['${keyCol}']=+this.value"
+              class="rej-inp col">
+            <input type="number" placeholder="0" step="0.01" value="${inputReject[keyKH]||''}"
+              oninput="inputReject['${keyKH}']=+this.value"
+              class="rej-inp kh">
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSafetyInput(){
+  const grid=document.getElementById('safetyInputGrid');grid.innerHTML='';
+  const clr=['#e2e8f0','#16a34a','#eab308','#dc2626','#3b82f6'];
+  grid.appendChild(document.createElement('div'));
+  for(let d=1;d<=15;d++){const h=document.createElement('div');h.className='s-hdr';h.textContent=d;grid.appendChild(h);}
+  for(let w=0;w<5;w++){
+    const wl=document.createElement('div');wl.className='s-lbl';wl.textContent='W'+(w+1);grid.appendChild(wl);
+    for(let d=0;d<15;d++){
+      const c=document.createElement('div');const st=inputSafety[w]?.[d]??0;
+      c.style.cssText=`height:22px;border-radius:3px;cursor:pointer;background:${clr[st]}`;
+      c.dataset.w=w;c.dataset.d=d;
+      c.onclick=function(){const wi=+this.dataset.w,di=+this.dataset.d;
+        inputSafety[wi][di]=(inputSafety[wi][di]??0)%4+1;
+        this.style.background=clr[inputSafety[wi][di]];};
+      grid.appendChild(c);
+    }
+  }
+}
+
+function cancelInput(){
+  if(inputReturnTo==='master')showMaster();
+  else showDashboard();
+}
+
+async function saveRecord(){
+  document.getElementById('btnSaveInput').innerHTML='<span class="sp"></span> Menyimpan...';
+  const newId=editingRecordId||(TODAY()+'_'+g('i_shift')+'_'+Date.now());
+  const rec={
+    id:newId,
+    savedAt:new Date().toISOString(),
+    meta:{date:g('i_date'),shift:g('i_shift')},
+    ach:JSON.parse(JSON.stringify(inputAch)),
+    reject:JSON.parse(JSON.stringify(inputReject)),
+    oee:{a:+g('i_oee_a'),t:+g('i_oee_t'),av:+g('i_oee_av'),pf:+g('i_oee_pf'),ql:+g('i_oee_ql')},
+    bd:{m:MACHINES.map((_,i)=>+document.getElementById('i_bd'+i)?.value||0)},
+    safety:inputSafety,
+  };
+  DB.records=DB.records.filter(r=>r.id!==newId);
+  DB.records.push(rec);
+  DB.records.sort((a,b)=>a.meta.date.localeCompare(b.meta.date));
+  const ok=await saveDB();
+  document.getElementById('btnSaveInput').innerHTML='💾 Simpan Data';
+  if(ok){
+    notify('Data berhasil disimpan! ✅','ok');
+    editingRecordId=null;
+    if(inputReturnTo==='master'){showMaster();}
+    else{
+      document.getElementById('filterType').value='date';
+      document.getElementById('filterDate').value=rec.meta.date;
+      document.getElementById('filterShift').value=rec.meta.shift;
+      onFilterChange();showDashboard();
+    }
+  }
+}
+
+// ════════════════════════════════════
+// MASTER DATA
+// ════════════════════════════════════
+function showMaster(){
+  show('screenMaster');renderMaster();
+}
+
+function renderMaster(){
+  const mMonth=document.getElementById('masterFilterMonth').value;
+  const mShift=document.getElementById('masterFilterShift').value;
+  let recs=[...(DB.records||[])].reverse();
+  if(mMonth)recs=recs.filter(r=>r.meta?.date?.startsWith(mMonth));
+  if(mShift!=='all')recs=recs.filter(r=>r.meta?.shift===mShift);
+  document.getElementById('masterCount').textContent=recs.length+' record';
+  const tbody=document.getElementById('masterTbody');
+  const empty=document.getElementById('masterEmpty');
+  if(!recs.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const shiftBadge=s=>{const cls={Ari:'shift-ari',Hilman:'shift-hilman',Reza:'shift-reza'}[s]||'';return`<span class="${cls}">Shift ${s||'—'}</span>`;};
+
+  // Hitung total reject cokelat & KH
+  const totalReject=(reject,varian)=>{
+    let t=0;
+    REJECT_AREAS.forEach(area=>area.items.forEach(item=>{
+      t+=reject?.[`${area.key}_${item.key}_${varian}`]||0;
+    }));
+    return t.toFixed(1);
+  };
+
+  tbody.innerHTML=recs.map((r,i)=>{
+    const bdTot=(r.bd?.m||[]).reduce((a,b)=>a+b,0);
+    const ts=r.savedAt?new Date(r.savedAt).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    return`<tr>
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td><strong>${r.meta?.date||'—'}</strong></td>
+      <td>${shiftBadge(r.meta?.shift)}</td>
+      <td class="mono">${r.oee?.a||0}%</td>
+      <td class="mono">${bdTot} min</td>
+      <td class="mono" style="color:#5b21b6">${totalReject(r.reject,'Cokelat')}</td>
+      <td class="mono" style="color:#15803d">${totalReject(r.reject,'Kacang Hijau')}</td>
+      <td style="font-size:10px;color:var(--muted)">${ts}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="action-btn btn-edit" onclick="editRecord('${r.id}')">✏️ Edit</button>
+        &nbsp;
+        <button class="action-btn btn-delete" onclick="promptDelete('${r.id}','${r.meta?.date}','${r.meta?.shift}')">🗑 Hapus</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editRecord(id){
+  const rec=DB.records.find(r=>r.id===id);
+  if(!rec){notify('Record tidak ditemukan','err');return;}
+  showInputForm(rec,'master');
+}
+
+function promptDelete(id,date,shift){
+  deleteTargetId=id;
+  document.getElementById('deleteInfo').textContent=`Hapus data tanggal ${date}, Shift ${shift}?`;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+async function confirmDelete(){
+  if(!deleteTargetId)return;
+  DB.records=DB.records.filter(r=>r.id!==deleteTargetId);
+  const ok=await saveDB();
+  closeMod('deleteModal');
+  if(ok){notify('Record berhasil dihapus','ok');renderMaster();}
+  deleteTargetId=null;
+}
+
+// ════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════
+function showDashboard(){show('screenApp');}
+function openSettings(){
+  document.getElementById('cfg_co').value=CFG.company||'';
+  document.getElementById('cfg_key').value=CFG.apiKey||'';
+  document.getElementById('cfg_bin').value=CFG.binId||'';
+  document.getElementById('cfg_apwd').value='';
+  document.getElementById('cfg_vpwd').value='';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function saveSettings(){
+  CFG.company=document.getElementById('cfg_co').value;
+  CFG.apiKey=document.getElementById('cfg_key').value;
+  const ap=document.getElementById('cfg_apwd').value;
+  const vp=document.getElementById('cfg_vpwd').value;
+  if(ap.length>=6)CFG.adminPwd=ap;if(vp.length>=6)CFG.viewPwd=vp;
+  localStorage.setItem('pb_cfg',JSON.stringify(CFG));
+  document.getElementById('tbPlant').textContent=CFG.company;
+  closeMod('settingsModal');notify('Pengaturan disimpan','ok');
+}
+
+// ════════════════════════════════════
+// EXPORT CSV
+// ════════════════════════════════════
+function exportCSV(){
+  const recs=getFiltered();
+  if(!recs.length){notify('Tidak ada data','err');return;}
+  const rows=[['Tanggal','Shift','Divisi','Varian','Target','Aktual','Satuan','OEE%','BD Total(min)',
+    ...REJECT_AREAS.flatMap(a=>a.items.flatMap(i=>[`Rej.${a.name}.${i.label}(Col)`,`Rej.${a.name}.${i.label}(KH)`]))]];
+  recs.forEach(r=>{
+    DIVISI.forEach(d=>{
+      ['Cokelat','Kacang Hijau'].forEach(v=>{
+        const ach=r.ach?.[`${d.key}_${v}`]||{a:0,t:0};
+        const rejCols=REJECT_AREAS.flatMap(a=>a.items.flatMap(i=>[r.reject?.[`${a.key}_${i.key}_Cokelat`]||0,r.reject?.[`${a.key}_${i.key}_Kacang Hijau`]||0]));
+        rows.push([r.meta?.date,r.meta?.shift,d.name,v,ach.t,ach.a,d.unit,r.oee?.a||0,(r.bd?.m||[]).reduce((a,b)=>a+b,0),...rejCols]);
+      });
+    });
+  });
+  const csv=rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='kino_production_'+TODAY()+'.csv';a.click();
+  notify('CSV berhasil didownload','ok');
+}
+
+// ════════════════════════════════════
+// UTILS
+// ════════════════════════════════════
+function show(id){SCREENS.forEach(s=>document.getElementById(s).style.display='none');document.getElementById(id).style.display='block';}
+function g(id){return document.getElementById(id)?.value||'';}
+function setPill(id,type,text){const el=document.getElementById(id);if(!el)return;el.className='pill pill-'+type;el.textContent=text;}
+function closeMod(id){document.getElementById(id).classList.remove('open');}
+function notify(msg,type='info'){const n=document.getElementById('notif');n.textContent=msg;n.className='notif '+type;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
